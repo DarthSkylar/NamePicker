@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Name Picker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .container {
+            text-align: center;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px;
+            font-size: 16px;
+        }
+        #output {
+            font-size: 20px;
+            margin: 20px;
+            color: #333;
+            font-weight: bold;
+        }
+        #instructions {
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #555;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Random Name Picker</h1>
+    <div id="instructions">
+        <p><strong>Instructions:</strong></p>
+        <p>Type your name as seen in the list below (it is not case-sensitive):</p>
+        <ul>
+            <li>Blake</li>
+            <li>Skylar</li>
+            <li>Daddy Beau</li>
+            <li>Daddy Eddie</li>
+            <li>Mommy Bebing</li>
+            <li>Louie</li>
+            <li>JP</li>
+            <li>Kevin</li>
+            <li>Kim</li>
+            <li>Reia</li>
+            <li>Tita Net</li>
+            <li>Jessa</li>
+            <li>Larry</li>
+            <li>Mau</li>
+        </ul>
+    </div>
+    <div class="container">
+        <label for="username">Enter Your Name:</label>
+        <input type="text" id="username" placeholder="Your name...">
+        <br>
+        <button onclick="pickRandomName()">Get Random Name</button>
+        <button onclick="clearResult()">Clear</button>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        // List of names
+        let names = [
+            'Blake', 'Skylar', 'Daddy Beau', 'Daddy Eddie', 'Mommy Bebing',
+            'Louie', 'JP', 'Kevin', 'Kim', 'Reia', 'Tita Net', 'Jessa', 'Larry', 'Mau'
+        ];
+
+        const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwBcwNJSpseexxgf05JXkj1ldROH9dg-zNbhUexM3ABP16d45a6iJyKNxyvT54mpsxrEA/exec';
+
+        // Function to pick a random name
+        async function pickRandomName() {
+            const usernameInput = document.getElementById('username').value.trim();
+            const outputDiv = document.getElementById('output');
+
+            if (usernameInput === '') {
+                alert('Please enter your name first.');
+                return;
+            }
+
+            // Check if name exists in the list (case insensitive)
+            const matchedName = names.find(name => name.toLowerCase() === usernameInput.toLowerCase());
+
+            if (!matchedName) {
+                alert('Your name is not on the list. Please enter a valid name.');
+                return;
+            }
+
+            if (names.length === 0) {
+                outputDiv.textContent = 'All names have been picked!';
+                return;
+            }
+
+            // Pick a random index from the remaining names (excluding the entered name)
+            const availableNames = names.filter(name => name.toLowerCase() !== matchedName.toLowerCase());
+            if (availableNames.length === 0) {
+                outputDiv.textContent = 'No names left to assign!';
+                return;
+            }
+
+            const randomIndex = Math.floor(Math.random() * availableNames.length);
+            const selectedName = availableNames[randomIndex];
+
+            // Display the selected name and remove it from the list
+            outputDiv.textContent = `Hi ${matchedName}, you got: ${selectedName}`;
+            names = names.filter(name => name !== selectedName);
+
+            // Send data to Google Sheets
+            await sendDataToGoogleSheet(matchedName, selectedName);
+        }
+
+        // Function to send data to Google Sheets
+        async function sendDataToGoogleSheet(username, assignedName) {
+            const payload = {
+                name: username,
+                assignedName: assignedName,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                await fetch(SHEET_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                console.log('Data sent to Google Sheets:', payload);
+            } catch (error) {
+                console.error('Error sending data:', error);
+            }
+        }
+
+        // Function to clear the output
+        function clearResult() {
+            document.getElementById('output').textContent = '';
+            document.getElementById('username').value = '';
+        }
+    </script>
+</body>
+</html>
